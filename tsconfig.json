@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2015",
+    "outDir": "build",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "strictNullChecks": true,
+    "sourceMap": false,
+    "baseUrl": "./",
+    "paths": {
+      "loquat": ["./typings/loquat/"]
+    }
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
