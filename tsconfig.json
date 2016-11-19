@@ -3,6 +3,9 @@
     "module": "commonjs",
     "target": "es2015",
     "outDir": "build",
+    "types": [
+      "node"
+    ],
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noImplicitReturns": true,

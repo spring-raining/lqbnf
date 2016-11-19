@@ -74,11 +74,7 @@ declare namespace loquat {
     Parser: Parser;
     LazyParser: LazyParser;
     lazy(thunk: Function): LazyParser;
-    parse(parser: AbstractParser, name: string, input: input, opts?: {}): {
-      success: boolean;
-      value?: any;
-      err?: AbstractParseError;
-    };
+    parse(parser: AbstractParser, name: string, input: input, opts?: {}): any;
     isParser(val: any): boolean;
     assertParser(val: any): void;
     extendParser(extensions: {}): void;
@@ -303,8 +299,8 @@ declare namespace loquat {
    */
 
   interface _LoquatQo {
-    qo(genFunc: Promise<any>): AbstractParser;
-    do(genFunc: Promise<any>): AbstractParser;
+    qo(genFunc: () => any): AbstractParser;
+    do(genFunc: () => any): AbstractParser;
   }
 
   /*
