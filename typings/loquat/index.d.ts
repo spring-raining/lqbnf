@@ -21,41 +21,91 @@ declare namespace loquat {
 
   interface ErrorMessage {
     new(type: errorMessageType, msgStr: string): ErrorMessage;
+    type: errorMessageType;
+    msgStr: string;
+  }
+  class ErrorMessage implements ErrorMessage {
+    equal(msgA: ErrorMessage, msgB: ErrorMessage): boolean;
+    messagesToString(msgs: Array<ErrorMessage>): string;
+    messagesEqual(msgsA: Array<ErrorMessage>, msgsB: Array<ErrorMessage>): boolean;
   }
 
-  interface AbstractParseError {}
+  interface AbstractParseError {
+    pos: SourcePos;
+    msgs: Array<ErrorMessage>;
+    toString(): string;
+    isUnknown(): boolean;
+    setPosition(pos: SourcePos): AbstractParseError;
+    setMessage(msgs: Array<ErrorMessage>): AbstractParseError;
+    addMessage(msgs: Array<ErrorMessage>): AbstractParseError;
+    setSpecificTypeMessages(type: errorMessageType, msgStrs: Array<string>): AbstractParseError;
+  }
 
   interface ParseError extends AbstractParseError {
     new(pos: SourcePos, msgs: Array<ErrorMessage>): ParseError;
   }
+  class ParseError implements ParseError {
+    unknown(pos: SourcePos): ParseError;
+    equal(errA: AbstractParseError, errB: AbstractParseError): boolean;
+    merge(errA: AbstractParseError, errB: AbstractParseError): AbstractParseError;
+  }
 
   interface LazyParseError extends AbstractParseError {
     new(thunk: Function): LazyParseError;
+    eval(): ParseError;
   }
 
   interface Config {
     new(opts?: {}): Config;
+    tabWidth: number;
+    unicode: boolean;
+  }
+  class Config implements Config {
+    equal(configA: Config, configB: Config): boolean;
   }
 
   interface State {
     new(config: Config, input: input, pos: SourcePos, userState?: any): State;
+    config: Config;
+    input: input;
+    pos: SourcePos;
+    userState?: any;
+    setConfig(config: Config): State;
+    setInput(input: input): State;
+    setPosition(pos: SourcePos): State;
+    setUserState(state: any): State;
+  }
+  class State implements State {
+    equal(stateA: State, stateB: State, inputEqual?: Function, userStateEqual?: Function): boolean;
   }
 
   interface Result {
     new(consumed: boolean, success: boolean, err: AbstractParseError, val?: any, state?: State): Result;
+    consumed: boolean;
+    success: boolean;
+    err: AbstractParseError;
+    val: any;
+    state: State;
+  }
+  class Result implements Result {
+    equal(resA: Result, resB: Result, valEqual?: Function, inputEqual?: Function, userStateEqual?: Function): boolean;
+    csuc(err: AbstractParseError, val: any, state: State): Result;
+    cerr(err: AbstractParseError): Result;
+    esuc(err: AbstractParseError, val: any, state: State): Result;
+    eerr(err: AbstractParseError): Result;
   }
 
-  interface AbstractParser extends _LoquatPrimSugar, _LoquatCharSugar, _LoquatCombinatorsSugar, _LoquatMonadSugar {}
+  interface AbstractParser extends _LoquatPrimSugar, _LoquatCharSugar, _LoquatCombinatorsSugar, _LoquatMonadSugar {
+    run(state: State): Result;
+  }
 
   interface Parser extends AbstractParser {
     new(func: Function): Parser;
-    run(state: State): Result;
   }
 
   interface LazyParser extends AbstractParser {
     new(thunk: Function): LazyParser;
     eval(): Parser;
-    run(state: State): Result;
   }
 
   interface _LoquatCore {
