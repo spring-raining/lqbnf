@@ -3,13 +3,8 @@ import bnfParser from './bnf';
 import {Definition} from './definition';
 
 function parseRules(src: string): {[k: string]: Array<Array<Definition>>} {
-  const util = require('util');
   const result = lq.parse(bnfParser, '', src);
   if (result.success) {
-    console.log(util.inspect(
-      result.value,
-      { colors: true, depth: undefined }
-    ));
     return result.value;
   }
   else {
@@ -37,47 +32,81 @@ function checkDefinitions(startRule: string, grammer: {[k: string]: Array<Array<
   }
 }
 
-function getParser(rule: string, grammer: {[k: string]: Array<Array<Definition>>}): loquat.AbstractParser {
-  return lq.choice(grammer[rule].map((defs) => {
+function getParser(startRule: string, grammer: {[k: string]: Array<Array<Definition>>}): loquat.AbstractParser {
 
-    const label = (defs.length === 1)
-      ? defs[0].getLabel()
-      : `[${defs.map(_ => _.getLabel()).join(', ')}]`;
-
+  function choice(rule: string): loquat.AbstractParser {
     return new lq.Parser((state: loquat.State) => {
-      const accum: Array<any> = [];
-      let currentState = state;
-      let currentErr: loquat.AbstractParseError = lq.ParseError.unknown(state.pos);
-      let consumed = false;
+      let consumedErr: loquat.AbstractParseError | null = null;
+      const errs: loquat.AbstractParseError[] = [];
 
-      for (const def of defs) {
-        let parser: loquat.AbstractParser;
-        if (def.type === 'literal') {
-          parser = (def.value.length === 1)? lq.char(def.value) : lq.string(def.value);
-          parser = lq.label(parser, lq.show(def.value));
+      const seqs = grammer[rule].map((defs) => sequence(defs));
+      for (const seq of seqs) {
+        const ret = seq(state);
+        if (ret.result.success) {
+          return ret.result;
         }
         else {
-          parser = lq.lazy(() => getParser(def.value, grammer));
+          consumedErr = consumedErr || ret.consumedErr;
+          errs.push(ret.result.err);
+          continue;
         }
+      }
+      if (consumedErr) {
+        return lq.Result.cerr(consumedErr);
+      }
+      else {
+        const err = errs.reduceRight(
+          (prev, current) => lq.ParseError.merge(current, prev),
+          lq.ParseError.unknown(state.pos));
+        return lq.Result.eerr(err);
+      }
+    });
+  }
 
-        const res = parser.run(currentState);
-        if (res.success) {
-          if (res.consumed) {
-            consumed = true;
+  function sequence(defs: Array<Definition>): (state: loquat.State) => {
+    result: loquat.Result;
+    consumedErr: loquat.AbstractParseError | null;
+  } {
+    return (state: loquat.State) => {
+      const label = (defs.length === 1)
+        ? defs[0].getLabel()
+        : `[${defs.map(_ => _.getLabel()).join(', ')}]`;
+
+      let consumedErr: loquat.AbstractParseError | null = null;
+
+      const result = new lq.Parser((state: loquat.State) => {
+        const accum: Array<any> = [];
+        let currentState = state;
+        let currentErr: loquat.AbstractParseError = lq.ParseError.unknown(state.pos);
+        let consumed = false;
+
+        for (const def of defs) {
+          let parser: loquat.AbstractParser;
+          if (def.type === 'literal') {
+            parser = (def.value.length === 1)? lq.char(def.value) : lq.string(def.value);
+            parser = parser.label(lq.show(def.value));
           }
-          accum.push(res.val);
-          currentState = res.state;
-          currentErr = res.err;
-        }
-        else {
-          if (accum.length === 0) {
-            // ignore first parse error
-            return res.consumed
-              ? lq.Result.eerr(res.err)
-              : lq.Result.eerr(lq.ParseError.merge(currentErr, res.err));
+          else {
+            parser = lq.lazy(() => choice(def.value));
+          }
+
+          const res = parser.run(currentState);
+          if (res.success) {
+            if (res.consumed) {
+              consumed = true;
+              accum.push(res.val);
+              currentState = res.state;
+              currentErr = res.err;
+            }
+            else {
+              accum.push(res.val);
+              currentState = res.state;
+              currentErr = lq.ParseError.merge(currentErr, res.err);
+            }
           }
           else {
             if (res.consumed) {
+              consumedErr = res.err;
               return lq.Result.cerr(res.err);
             }
             else {
@@ -87,26 +116,20 @@ function getParser(rule: string, grammer: {[k: string]: Array<Array<Definition>>
             }
           }
         }
-      }
-      return consumed
-        ? lq.Result.csuc(currentErr, accum, currentState)
-        : lq.Result.esuc(currentErr, accum, currentState);
-    }).label(label);
-  }));
+        return consumed
+          ? lq.Result.csuc(currentErr, accum, currentState)
+          : lq.Result.esuc(currentErr, accum, currentState);
+      }).label(label).run(state);
+      return { result, consumedErr };
+    };
+  }
+
+  return choice(startRule);
 }
 
-const grammer = parseRules(process.argv[3]);
-const start = 'syntax';
-checkDefinitions(start, grammer);
-const parser = getParser(start, grammer).left(lq.eof);
-const result = lq.parse(parser, '', process.argv[2]);
-if (result.success) {
-  const util = require('util');
-  console.log(util.inspect(
-    result.value,
-    { colors: true, depth: undefined }
-  ));
-}
-else {
-  console.error(result.error.toString());
+module.exports = function(rules: string, startRule: string): loquat.AbstractParser {
+  const grammer = parseRules(rules);
+  checkDefinitions(startRule, grammer);
+  const parser = getParser(startRule, grammer).left(lq.eof);
+  return parser;
 }
