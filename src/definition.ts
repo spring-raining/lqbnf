@@ -1,4 +1,6 @@
-import * as lq from 'loquat';
+import loquat = require('loquat');
+const lq = loquat();
+
 type definitionTypes = 'literal' | 'rule';
 
 export class Definition {

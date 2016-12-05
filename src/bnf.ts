@@ -1,5 +1,7 @@
-import * as lq from 'loquat';
+import loquat = require('loquat');
 import {Definition} from './definition';
+
+const lq = loquat();
 
 const spaces = lq.skipMany(lq.oneOf(' \t')).label('');
 function lexeme(parser: loquat.AbstractParser): loquat.AbstractParser {

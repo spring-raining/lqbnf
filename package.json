@@ -1,6 +1,6 @@
 {
   "name": "lqbnf",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "./build/main.js",
   "types": "./build/main.d.ts",
@@ -16,7 +16,7 @@
   "author": "spring-raining",
   "license": "MIT",
   "dependencies": {
-    "loquat": "^2.0.0-0"
+    "loquat": "^2.0.0-2"
   },
   "devDependencies": {
     "@types/node": "^6.0.48",

@@ -370,6 +370,6 @@ declare namespace loquat {
 }
 
 declare module 'loquat' {
-  var lq: loquat._Loquat;
-  export = lq;
+  function init(opts?: {}): loquat._Loquat;
+  export = init;
 }

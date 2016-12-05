@@ -1,9 +1,9 @@
 'use strict';
 
 const BNF = require('./../build/main');
-const lq = require('loquat');
+const lq = require('loquat')();
 
-const jsonParser = BNF(`
+const parser = BNF(`
   <number>                ::= "-" <non-negative-number> | <non-negative-number>
   <non-negative-number>   ::= <non-negative-integer> "." <digits0> | <non-negative-integer>
   <non-negative-integer>  ::= <digits> | "0"
@@ -13,7 +13,7 @@ const jsonParser = BNF(`
   <digit>                 ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0"
 `, 'number');
 
-const result = lq.parse(jsonParser, '', '-1230.0456');
+const result = lq.parse(parser, '', '-1230.0456');
 if (result.success) {
   const util = require('util');
   console.log(util.inspect(

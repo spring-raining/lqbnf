@@ -1,6 +1,8 @@
-import * as lq from 'loquat';
+import loquat = require('loquat');
 import bnfParser from './bnf';
 import {Definition} from './definition';
+
+const lq = loquat();
 
 function parseRules(src: string): {[k: string]: Array<Array<Definition>>} {
   const result = lq.parse(bnfParser, '', src);
