@@ -2,15 +2,24 @@
   "name": "lqbnf",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "./build/main.js",
+  "types": "./build/main.d.ts",
   "scripts": {
+    "build": "tsc -p .",
+    "prepublish": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spring-raining/lqbnf.git"
   },
   "author": "spring-raining",
   "license": "MIT",
   "dependencies": {
+    "loquat": "^2.0.0-0"
+  },
+  "devDependencies": {
     "@types/node": "^6.0.48",
-    "loquat": "^2.0.0-0",
     "typescript": "^2.0.9"
   }
 }
